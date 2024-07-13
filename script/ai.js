@@ -15,14 +15,14 @@ const fonts = {
 };
 
 module.exports.config = {
-    name: 'ae',
+    name: 'ai',
     version: '2',
     role: 0,
     hasPrefix: false,
-    aliases: ['anja', 's'],
+    aliases: ['Aziz', 'Ai'],
     description: "Command for AI-generated responses styled with special fonts.",
     usage: "ex : ai [prompt]",
-    credits: 'aesther',
+    credits: 'ʆɞ Aziz ʆɞ',
     cooldown: 1,
 };
 
@@ -30,14 +30,17 @@ module.exports.run = async function({ api, event, args }) {
     const input = args.join(' ');
     
     if (!input) {
-        api.sendMessage('🟡 ᗩEᔕTᕼEᖇ ⚪\n\nฅ^•ﻌ•^ฅ.🔞 .', event.threadID, event.messageID);
-        api.setMessageReaction("🟡", event.messageID, () => {}, true);
+        api.sendMessage('Qu’est ce qui brille de l’éclat des stars, ta question ou mon désire de t’aider? Pose ta question pour que ces interrogations trouvent reponse
+                        
+                        
+                        ʆɞ Aziz ʆɞ.', event.threadID, event.messageID);
+        api.setMessageReaction("❤️", event.messageID, () => {}, true);
         return;
     }
     
     try {
         const { data } = await axios.get(`https://hiroshi-rest-api.replit.app/ai/jailbreak?ask=${encodeURIComponent(input)}`);
-        api.setMessageReaction("⭐", event.messageID, () => {}, true);
+        api.setMessageReaction("🗿", event.messageID, () => {}, true);
         let response = data.response || 'No response received'; // Handling empty response
         
         // Replace characters with stylized characters from fonts
@@ -45,12 +48,12 @@ module.exports.run = async function({ api, event, args }) {
             return fonts[char.toLowerCase()] || char; // Use lowercase for lookup to match fonts object
         }).join('');
         
-        api.sendMessage(`🟡 ᗩEᔕTᕼEᖇ ⚪\n\n${response} ⚪`, event.threadID, event.messageID);
-        api.setMessageReaction("🟠", event.messageID, () => {}, true);
+        api.sendMessage(`ʆɞ Aziz ʆɞ \n\n${response} `, event.threadID, event.messageID);
+        api.setMessageReaction("❄️", event.messageID, () => {}, true);
         
     } catch (error) {
         console.error('Error:', error);
         api.sendMessage('⚠️ Error Loading ⚠️', event.threadID, event.messageID);
-        api.setMessageReaction("🔴", event.messageID, () => {}, true);
+        api.setMessageReaction("❗", event.messageID, () => {}, true);
     }
 };
