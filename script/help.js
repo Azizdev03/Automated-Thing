@@ -25,7 +25,7 @@ module.exports.run = async function({
       let page = 1;
       let start = (page - 1) * pages;
       let end = start + pages;
-      let helpMessage = `[ Aziz X Ai]\n  ˚₊‧꒰ა /ᐠ - ˕ -マ໒꒱ ‧₊˚ \n━━━━━━━━━━━\n`;
+      let helpMessage = ` Aziz X Ai\n  ˚₊‧꒰ა /ᐠ - ˕ -マ໒꒱ ‧₊˚ \n━━━━━━━━━━━\n`;
       for (let i = start; i < Math.min(end, commands.length); i++) {
         helpMessage += `✪ \t${i + 1}▪﹝${prefix}${commands[i]}﹞\n`;
       }
@@ -91,7 +91,7 @@ module.exports.handleEvent = async function({
     messageID,
     body
   } = event;
-  const message = prefix ? 'Prefix\n━━━━━━━━━\n➤𝙲𝙼𝙳𝚂: ' + prefix : "𝙎𝙊𝙍𝙍𝙔........(ᵕ—ᴗ—) ♡\n━━━━━━━━━━━\nI don't have 𝚊 𝗣𝗥𝗘𝗙𝗜𝗫";
+  const message = prefix ? 'Mon prefix est\n━━━━━━━━━\n➤𝙲𝙼𝙳𝚂: ' + prefix : "𝙎𝙊𝙍𝙍𝙔........(ᵕ—ᴗ—) ♡\n━━━━━━━━━━━\nI don't have 𝚊 𝗣𝗥𝗘𝗙𝗜𝗫";
   if (body?.toLowerCase().startsWith('prefix')) {
     api.sendMessage(message, threadID, messageID);
   }
