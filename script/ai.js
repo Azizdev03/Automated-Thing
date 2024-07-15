@@ -1,59 +1,116 @@
 const axios = require('axios');
+const NodeCache = require('node-cache');
 
-const fonts = {
-    'a': "𝖺", 'b': "𝖻", 'c': "𝖼", 'd': "𝖽", 'e': "𝖾", 'f': "𝖿", 'g': "𝗀", 'h': "𝗁", 'i': "𝗂",
-    'j': "𝗃", 'k': "𝗄", 'l': "𝗅", 'm': "𝗆", 'n': "𝗇", 'o': "𝗈", 'p': "𝗉", 'q': "𝗊", 'r': "𝗋",
-    's': "𝗌", 't': "𝗍", 'u': "𝗎", 'v': "𝗏", 'w': "𝗐", 'x': "𝗑", 'y': "𝗒", 'z': "𝗓",
-    'A': "𝖠", 'B': "𝖡", 'C': "𝖢", 'D': "𝖣", 'E': "𝖤", 'F': "𝖥", 'G': "𝖦", 'H': "𝖧", 'I': "𝖨",
-    'J': "𝖩", 'K': "𝖪", 'L': "𝖫", 'M': "𝖬", 'N': "𝖭", 'O': "𝖮", 'P': "𝖯", 'Q': "𝖰", 'R': "𝖱",
-    'S': "𝖲", 'T': "𝖳", 'U': "𝖴", 'V': "𝖵", 'W': "𝖶", 'X': "𝖷", 'Y': "𝖸", 'Z': "𝖹",
-    ' ': " ", // Ensure spaces are properly handled
-    '.': ".", // Handle punctuation marks as needed
-    '?': "?",
-    '!': "!",
-    // Add other characters as necessary
-};
+// Initialize cache
+const cache = new NodeCache({ stdTTL: 600, checkperiod: 120 });
 
-module.exports.config = {
-    name: 'ai',
-    version: '2',
-    role: 0,
-    hasPrefix: false,
-    aliases: ['Aziz', 'Ai'],
-    description: "Command for AI-generated responses styled with special fonts.",
-    usage: "ex : ai [prompt]",
-    credits: 'ʆɞ Aziz ʆɞ',
-    cooldown: 1,
-};
+// Add more Apis or Ai services here.
+const services = [
+    { url: 'http://markdevs-last-api.onrender.com/api/v2/gpt4', param: 'query' },
+    { url: 'https://markdevs-last-api.onrender.com/api/v3/gpt4', param: 'ask' },
+    { url: 'https://markdevs-last-api.onrender.com/gpt4', param: 'prompt', uid: 'uid' }
+];
 
-module.exports.run = async function({ api, event, args }) {
-    const input = args.join(' ');
-    
-    if (!input) {
-        api.sendMessage('Qu’est ce qui brille de l’éclat des stars, ta question ou mon désire de t’aider? Pose ta question pour que ces interrogations trouvent reponse
-                        
-                        
-                        ʆɞ Aziz ʆɞ.', event.threadID, event.messageID);
-        api.setMessageReaction("❤️", event.messageID, () => {}, true);
-        return;
+const designatedHeader = "➪ 𝘼𝙯𝙞𝙯 🩷🪽";
+
+const getAIResponse = async (question, messageID) => {
+    // Check if response is cached
+    const cachedResponse = cache.get(question);
+    if (cachedResponse) {
+        return { response: cachedResponse, messageID };
     }
-    
+
+    const response = await getAnswerFromAI(question.trim() || "hi");
+    // Cache the response
+    cache.set(question, response);
+    return { response, messageID };
+};
+
+const getAnswerFromAI = async (question) => {
+    const promises = services.map(({ url, param, uid }) => {
+        const params = uid ? { [param]: question, [uid]: '61561393752978' } : { [param]: question };
+        return fetchFromAI(url, params);
+    });
+
+    const responses = await Promise.allSettled(promises);
+    for (const { status, value } of responses) {
+        if (status === 'fulfilled' && value) {
+            return value;
+        }
+    }
+
+    throw new Error("No valid response from any AI service");
+};
+
+const fetchFromAI = async (url, params) => {
     try {
-        const { data } = await axios.get(`https://hiroshi-rest-api.replit.app/ai/jailbreak?ask=${encodeURIComponent(input)}`);
-        api.setMessageReaction("🗿", event.messageID, () => {}, true);
-        let response = data.response || 'No response received'; // Handling empty response
-        
-        // Replace characters with stylized characters from fonts
-        response = response.split('').map(char => {
-            return fonts[char.toLowerCase()] || char; // Use lowercase for lookup to match fonts object
-        }).join('');
-        
-        api.sendMessage(`ʆɞ Aziz ʆɞ \n\n${response} `, event.threadID, event.messageID);
-        api.setMessageReaction("❄️", event.messageID, () => {}, true);
-        
+        const { data } = await axios.get(url, { params });
+        return data.gpt4 || data.reply || data.response || data.answer || data.message;
     } catch (error) {
-        console.error('Error:', error);
-        api.sendMessage('⚠️ Error Loading ⚠️', event.threadID, event.messageID);
-        api.setMessageReaction("❗", event.messageID, () => {}, true);
+        console.error("Network Error:", error.message);
+        return null;
     }
+};
+
+const handleCommand = async (api, event, args, message) => {
+    try {
+        const question = args.join(" ").trim();
+        if (!question) return message.reply("Qu’est ce qui brille de l’éclat des stars, ta question ou mon désir de t'aider? Pose ta question afin que ces deux interrogations trouvent solution .");
+        const { response, messageID } = await getAIResponse(question, event.messageID);
+        api.sendMessage(`➪ 𝘼𝙯𝙞𝙯 🩷🪽\n━━━━━━━━━━━━━━━━\n${response}\n━━━━━━━━━━━━━━━━`, event.threadID, messageID);
+    } catch (error) {
+        console.error("Error in handleCommand:", error.message);
+        message.reply("An error occurred while processing your request.");
+    }
+};
+
+const onStart = async ({ api, event, args }) => {
+    try {
+        const input = args.join(' ').trim();
+        const { response, messageID } = await getAIResponse(input, event.messageID);
+        api.sendMessage(`➪ 𝘼𝙯𝙞𝙯 🩷🪽\n━━━━━━━━━━━━━━━━\n${response}\n━━━━━━━━━━━━━━━━`, event.threadID, messageID);
+    } catch (error) {
+        console.error("Error in onStart:", error.message);
+        api.sendMessage("An error occurred while processing your request.", event.threadID);
+    }
+};
+
+const onChat = async ({ event, api }) => {
+    const messageContent = event.body.trim().toLowerCase();
+    const isReplyToBot = event.messageReply && event.messageReply.senderID === api.getCurrentUserID();
+    const isDirectMessage = messageContent.startsWith("ai") && event.senderID !== api.getCurrentUserID();
+
+    if (isReplyToBot) {
+        const repliedMessage = event.messageReply.body || "";
+        if (!repliedMessage.startsWith(designatedHeader)) {
+            return;
+        }
+    }
+
+    if (isReplyToBot || isDirectMessage) {
+        const userMessage = isDirectMessage ? messageContent.replace(/^ai\s*/, "").trim() : messageContent;
+        const botReplyMessage = isReplyToBot ? event.messageReply.body : "";
+        const input = `${botReplyMessage}\n${userMessage}`.trim();
+
+        try {
+            const { response, messageID } = await getAIResponse(input, event.messageID);
+            api.sendMessage(`➪ 𝘼𝙯𝙞𝙯 🩷🪽\n━━━━━━━━━━━━━━━━\n${response}\n━━━━━━━━━━━━━━━━`, event.threadID, messageID);
+        } catch (error) {
+            console.error("Error in onChat:", error.message);
+            api.sendMessage("An error occurred while processing your request.", event.threadID);
+        }
+    }
+};
+
+module.exports = {
+    config: {
+        name: 'ai',
+        author: 'Aziz Dev',
+        role: 0,
+        category: 'ai',
+        shortDescription: 'AI to answer any question',
+    },
+    onStart,
+    onChat,
+    handleCommand
 };
